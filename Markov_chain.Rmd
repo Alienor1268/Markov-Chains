@@ -125,6 +125,7 @@ After 100 weeks, the child has nearly 100 % chance to have the 7 different cards
 
 
 ```{r}
+#https://stephens999.github.io/fiveMinuteStats/simulating_discrete_chains_1.html
 # simulate discrete Markov chains according to transition matrix P
 run.mc.sim <- function( P, num.iters = 50 ) {
   
