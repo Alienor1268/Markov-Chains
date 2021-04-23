@@ -1,0 +1,242 @@
+---
+title: "Markov Chain"
+author: "Aliénor Franck de Préaumont"
+date: "21/04/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+I. Markov Chain: Definition, Properties and Gambler’s ruin example
+
+Definition: 
+A Markov Chain is a dicrete stochastic process,  which can occupy different states, the transition probabilities allows evolution between the different states. A Markov Chain can be defined as a suit of random variables Xn, whose values are  the outcome of random phenomenon. A  Markov Chain is a powerful tool, which  can generate random process model, for example the simulation of artificial plant growth (first slide), or to anticipate financial risk, or to create artificial music
+
+Properties:
+
+- Markov Chain is a memory less process, the conditional distribution of the future states depends only on the present state. The Markov process is independent, the conditional distribution of future states doesn't depends on the past states.
+
+- Markov Chain is a process based with discrete time and discrete state space. We talk about “homogeneous discrete time Markov chains”. So,a Markov chain is a discrete sequence of states, each drawn from a discrete state space (finite or not).
+
+
+Example: Gambler's ruin
+
+A gambler is dragged to the casino by his friend, he takes only 50$ to gamble with. He decides to play roulette. At each spin, he places $25 on red. If red occurs, he wins $25. If black comes up, he loses his $25, therefore the odds of winning are 50%. He quit, when he has 0 money left or when he get the 75$. We can model this process as Markov Chain.
+
+
+```{r}
+library("markovchain")
+library(diagram)
+library(shape)
+library(circlize)
+```
+
+Transition diagramm
+```{r}
+mat <- matrix(c(1,0,0,0,0.5,0,0.5,0,0,0.5,0,0.5,0,0,0,1), nrow = 4,  byrow = TRUE)
+colnames(mat) <- c('0$', '25', '50$', '75$')
+rownames(mat) <- c('0$', '25', '50$', '75$')
+```
+
+```{r}
+a <- array(mat,dim = c(4,4))
+markov <- new("markovchain",transitionMatrix=a,states=c("0$","25$","50$","75$"), name="test")
+
+layout1 = matrix(c(0,0,0,1,1,1,1,0), ncol = 2,  byrow = TRUE)
+
+ plot(markov, vertex.size = 25, layout = layout1)
+```
+ 
+
+
+```{r}
+plotmat(mat,pos = c(1,3),
+        name = c('0$', '25$', '50$', '75$'), # names of the states
+        box.lwd=1, # outline of state
+        cex.txt=1, # size of probabilities
+        box.prop=0.5, # size of box
+        box.type = 'circle',
+        self.cex = 0.6, # size of self probability
+        lwd = 1, # outline of probabilities
+        box.cex= 0.5 # size of text in box
+        )
+```
+So there are 4 states: the gambler can have 0$, 25$, 50$, 75$. If he is broke (0$) or if he wins 75$, he quits the game, the probability to not gambling any more is 1. Regarding the instates, the chance of winning or losing is .5 If he has 25$, the chance of winning is .5, if he has 50$, the chance of winning is .5. If he has 25$ or 50$, the chance of losing is .5. ( our path with transition Probabilities).
+
+
+II- Steady States in long term behavior and transition matrix: collection example
+
+
+Every week a child is getting a corn flakes cereal packet, in which there is a collectible card game.
+There are  in total 7 different types of collectible card games. 
+
+```{r}
+P <- t(matrix(c( 0, 1,   0,   0,  0,   0,   0,   0,
+                 0, 1/7, 6/7,   0,  0,   0,   0,   0,
+                 0, 0, 2/7, 5/7,  0,   0,   0,   0,
+                 0,   0, 0, 3/7, 4/7,  0,   0,   0,
+                 0,   0,   0, 0, 4/7, 3/7,  0,   0,
+                 0,   0,   0,   0, 0, 5/7, 2/7,  0,
+                 0,   0,   0,   0,   0, 0, 6/7, 1/7,
+                 0,   0,   0,   0,   0,   0, 0, 1), nrow=8, ncol=8))
+colnames(P) <- c('0', '1', '2', '3', '4', '5', '6', '7')
+rownames(P) <- c('0', '1', '2', '3', '4', '5', '6', '7')
+print(P)
+```
+
+
+
+We put the information from the transition diagram into a matrix form. We get the probability distribution from the random variable. The number of columns match with the number of states.
+
+On the left side, we can see the states "coming from" and on the right side the states "coming to". 
+After buying the first corn flakes package, the child has 100% chance to get one new card. After getting the first card,the child 1/7% chance to get the same card, while buying the next cornflakes package. He has then 6/7% chance to get a new card.  
+
+
+```{r}
+chor_mat <- chordDiagram(P)
+```
+Here we see a visualisation of the transition matrix, with the help of the chordiagramm function (package circlize). When the child has 5 different collectible cards, he has 5/8 chance to get the same card and 3/8 chance to get a 6. new card.
+
+
+We define dep_0 the initial matrice, the child get a first cornflakes package with a collectible card. We use 
+
+
+```{r}
+init <- matrix(c(1,0,0,0,0,0,0,0),nrow=1, ncol=8)
+init %*% P
+```
+After multiplying the initial matrix with the transition matrix, we notice that the child get a new card is 100% chance.
+
+```{r}
+init %*% P %*% P %*% P
+
+
+```
+After buying 3 packets, the child has 20 % chance to get 3 times the same card, 37% chance to get 2 different cards and 61% chance to get 3 different cards.
+
+Longterm behavior - stationary distribution
+
+```{r}
+library(expm)
+init %*%(P%^%100)
+
+```
+After 100 weeks, the child has nearly 100 % chance to have the 7 different cards. The distribution becomes steady, it's intuitive, in the long term, the child gets all the different collectible cards. The other probabilities are close to 0. It's impossible in the long term to stay with for example 3 cards.
+
+
+```{r}
+# simulate discrete Markov chains according to transition matrix P
+run.mc.sim <- function( P, num.iters = 50 ) {
+  
+  # number of possible states
+  num.states <- nrow(P)
+  
+  # stores the states X_t through time
+  states     <- numeric(num.iters)
+
+  # initialize variable for first state 
+  states[1]    <- 1
+
+  for(t in 2:num.iters) {
+    
+    # probability vector to simulate next state X_{t+1}
+    p  <- P[states[t-1], ]
+    
+    ## draw from multinomial and determine state
+    states[t] <-  which(rmultinom(1, 1, p) == 1)
+  }
+  return(states)
+}
+
+```
+
+
+
+```{r}
+P <- t(matrix(c( 0, 1,   0,   0,  0,   0,   0,   0,
+                 0, 1/7, 6/7,   0,  0,   0,   0,   0,
+                 0, 0, 2/7, 5/7,  0,   0,   0,   0,
+                 0,   0, 0, 3/7, 4/7,  0,   0,   0,
+                 0,   0,   0, 0, 4/7, 3/7,  0,   0,
+                 0,   0,   0,   0, 0, 5/7, 2/7,  0,
+                 0,   0,   0,   0,   0, 0, 6/7, 1/7,
+                 0,   0,   0,   0,   0,   0, 0, 1), nrow=8, ncol=8))
+```
+
+
+
+```{r}
+num.chains     <- 5
+num.iterations <- 50
+chain.states <- matrix(NA, ncol=num.chains, nrow=num.iterations)
+for(c in seq_len(num.chains)){
+  chain.states[,c] <- run.mc.sim(P)
+}
+
+
+matplot(chain.states, type='l', lty=1, col=1:5, ylim=c(0,9), ylab='state', xlab='time')
+abline(h=1, lty=3)
+abline(h=8, lty=3)
+
+```
+This graph shows us that probabilities are converging to a stationary state. 
+
+
+III Hidden Markov Model
+
+
+A Hidden Markov Model is based on a Markov Model. However sometimes, some states are unobservable, we call them : hidden states.
+
+For example: an old friend is living far from you, he is sending you every day an mail explaining what he did during the day. He just has 3 activities: going for a walk, shopping, cleaning his flat and he decides his activities just according the weather outside ( raining or sunny). In the end, you know him well, and you know the probability, that he is choosing an activity according to the weather outside. If you know the activity of the day, you can build an Hidden Markov Model.
+
+Observed events and hidden events are causal factors in our probabilistic model, which can be analysed with the help of Hidden Markov Model 
+
+We need to introduce the term «latent states» : they give us the «state-space model », they can be of different type or dimension
+In Hidden Markov Model the latent variablerkov Chain;  we use a Markov Chain to compute a sequence of observable events. s need to be discrete. 
+
+We simulate here an hidden Markov Model with 2 states, the transition matrix is P (symetric), there is 0.9 chance to remain at the same state and 0.1 chance to change state. The « bubbles » are the observed éléments probabilities, which are generating the red line. The hidden states are then represent by this red line. 
+As part of Markov Hidden Model, we can use a forward-backyard algorithm. Forward and Backward probabilities are combined to find the most probably Hidden State
+
+
+
+
+```{r}
+#code from: https://stephens999.github.io/fiveMinuteStats/hmm.html#simulate_from_an_hmm
+set.seed(1)
+T = 200
+K = 2
+sd= 0.4
+P = cbind(c(0.9,0.1),c(0.1,0.9))
+
+# Simulate the latent (Hidden) Markov states
+Z = rep(0,T)
+Z[1] = 1
+for(t in 1:(T-1)){
+  Z[t+1] = sample(K, size=1, prob=P[Z[t],])
+}
+
+# Simulate the emitted/observed values
+X= rnorm(T,mean=Z,sd=sd)
+
+figure <- plot(X, main="Realization of HMM; latent states shown in red")
+lines(Z,col=2,lwd=2)
+```
+Sources: 
+
+Markov Chains:
+https://projects.iq.harvard.edu/files/stat110/files/markov_chains_handout.pdf
+https://www.youtube.com/watch?v=afIhgiHVnj0
+https://stephens999.github.io/fiveMinuteStats/simulating_discrete_chains_1.html
+https://www.youtube.com/watch?v=e0ZHDK4DSEI
+https://brilliant.org/wiki/markov-chains/
+https://setosa.io/ev/markov-chains/
+https://towardsdatascience.com/introduction-to-markov-chains-50da3645a50d
+https://www.sciencedirect.com/topics/agricultural-and-biological-sciences/markov-chain
+
+
+Hidden Markov Model
+https://web.stanford.edu/~jurafsky/slp3/A.pdf
+https://cedar.buffalo.edu/~srihari/CSE555/Chap3.Part8.pdf
+https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm
+https://stephens999.github.io/fiveMinuteStats/hmm.html#simulate_from_an_hmm
+
